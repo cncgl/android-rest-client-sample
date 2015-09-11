@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/VolleySample.iml" filepath="$PROJECT_DIR$/VolleySample.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android-rest-client-sample.iml" filepath="$PROJECT_DIR$/android-rest-client-sample.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

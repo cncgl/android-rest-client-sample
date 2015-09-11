@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -24,29 +25,44 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends FragmentActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
+    private List<Todo> mTodoList;
+
     private RequestQueue mQueue;
     private LinearLayout mColorsLayout;
 
+    private boolean mIsTablet = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mColorsLayout = (LinearLayout)findViewById(R.id.colorsLayout);
+        //ダミーデータ作成
+        //mTodoList = Todo.addDummyItem();
         mQueue = Volley.newRequestQueue(this);
+        loadTasks();
 
-        loadColor();
+        //TODOリスト一覧を表示
+        //showTodoList();
+
+        //タブレットレイアウトなら右側にフォーム画面を表示
+        FrameLayout container2 = (FrameLayout) findViewById(R.id.container2);
+        if (container2 != null) {
+            mIsTablet = true;
+            showTodoForm(mTodoList.get(0));
+        }
     }
 
-    private void loadColor() {
-        Log.d(TAG, "loadColor");
-        mColorsLayout.removeAllViews();
+    private void loadTasks() {
+        Log.d(TAG, "loadTasks");
 
         // 接続先
-        String url = "https://raw.githubusercontent.com/yokmama/honki_android/master/samples/colors.json";
+        String url = "http://cogel.jp:4001/api/todos";
 
         // キューにリクエストを追加
         mQueue.add(new JsonObjectRequest(
@@ -55,14 +71,19 @@ public class MainActivity extends FragmentActivity {
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        Log.d(TAG, response.toString());
-
                         try {
-                            JSONArray colorsArray = response.getJSONArray("colorsArray");
-                            for (int i = 0; i < colorsArray.length(); i++) {
-                                JSONObject colorObject = colorsArray.getJSONObject(i);
-                                addItem(colorObject.getString("colorName"), colorObject.getString("hexValue"));
+                            JSONArray todos = response.getJSONArray("todos");
+                            mTodoList = new ArrayList<Todo>();
+
+                            for (int i = 0; i < todos.length(); i++) {
+                                JSONObject todo = todos.getJSONObject(i);
+                                mTodoList.add(new Todo(
+                                        todo.getBoolean("status") ? Todo.ColorLabel.PINK : Todo.ColorLabel.GREEN,
+                                        todo.getString("title"),
+                                        0L
+                                ));
                             }
+                            showTodoList();
 
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -78,36 +99,48 @@ public class MainActivity extends FragmentActivity {
         ));
     }
 
-    private void addItem(String colorName, String hexValue) {
-        Log.d(TAG, colorName + "," + hexValue);
-        TextView item = (TextView)getLayoutInflater().inflate(R.layout.color_row, null, false);
-
-        item.setText(colorName);
-        item.setBackgroundColor(Color.parseColor(hexValue));
-
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        mColorsLayout.addView(item, params);
+    /**
+     * TODOリスト一覧を表示
+     */
+    public void showTodoList() {
+        String tag = TodoListFragment.TAG;
+        getSupportFragmentManager().beginTransaction().replace(R.id.container,
+                TodoListFragment.newInstance(), tag).commit();
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+    /**
+     * TODOフォーム画面を表示
+     *
+     * @param item TODOリストデータ
+     */
+    public void showTodoForm(Todo item) {
+        String tag = TodoFormFragment.TAG;
+        TodoFormFragment fragment;
+        if (item == null) {
+            fragment = TodoFormFragment.newInstance();
+        } else {
+            fragment = TodoFormFragment.newInstance(item.getColorLabel(),
+                    item.getValue(), item.getCreatedTime());
         }
+        if (!mIsTablet) {
+            //スマートフォンレイアウトの場合はcontainerに表示
+            getSupportFragmentManager().beginTransaction().replace(R.id.container,
+                    fragment, tag).addToBackStack(tag).commit();
+        }else{
+            //タブレットレイアウトの場合はcontainer2に表示
+            getSupportFragmentManager().beginTransaction().replace(R.id.container2,
+                    fragment, tag).addToBackStack(tag).commit();
+        }
+    }
 
-        return super.onOptionsItemSelected(item);
+    public List<Todo> getTodoList() {
+        return mTodoList;
+    }
+    /**
+     * タブレットか判定.
+     * @return
+     */
+    public boolean isTablet() {
+        return mIsTablet;
     }
 }

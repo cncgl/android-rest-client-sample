@@ -24,8 +24,7 @@
         android:id="@+id/color_label_frame"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="1">
+        android:orientation="horizontal">
 
         <Button
             android:background="@drawable/bg_colorlabel_grey"

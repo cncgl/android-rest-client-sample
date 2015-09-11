@@ -1,23 +1,15 @@
 package cogel.jp.volleysample;
 
-import android.app.DownloadManager;
-import android.graphics.Color;
-import android.support.v4.app.FragmentActivity;
-// import android.support.v7.app.AppCompatActivity;
+
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
@@ -28,12 +20,11 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends FragmentActivity {
+public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private List<Todo> mTodoList;
 
     private RequestQueue mQueue;
-    private LinearLayout mColorsLayout;
 
     private boolean mIsTablet = false;
 
@@ -97,6 +88,17 @@ public class MainActivity extends FragmentActivity {
                     }
                 }
         ));
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (getSupportFragmentManager().getBackStackEntryCount() > 1) {
+            //フォーム画面を開いている場合は画面を閉じる
+            getSupportFragmentManager().popBackStack();
+        } else {
+            //リスト画面の場合は通常のバックキー処理(アプリを終了)
+            super.onBackPressed();
+        }
     }
 
     /**

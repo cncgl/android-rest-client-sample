@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -15,6 +16,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -32,7 +42,10 @@ public class TodoListFragment extends Fragment implements AdapterView.OnItemClic
 
     private List<Todo> mTodoList;
 
+    private RequestQueue mQueue;
 
+    //  ファクトリー
+    //---------------------------------------
     public static TodoListFragment newInstance() {
         return new TodoListFragment();
     }
@@ -97,14 +110,43 @@ public class TodoListFragment extends Fragment implements AdapterView.OnItemClic
         }
     }
 
-    //コンテキストメニュークリック時のリスナー
+    /**
+     * コンテキストメニュー長押し時のメニュー表示
+     * @param item 選択されたメニューアイテム
+     * @return 正常に処理された時に真
+     */
     @Override
     public boolean onContextItemSelected(MenuItem item) {
-        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item
-                .getMenuInfo();
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        int listPosition = info.position;
+        Todo todo = mAdapter.getItem(listPosition);
+
         int itemId = item.getItemId();
         if (itemId == MENU_ID_DELETE) {
             //アイテムを削除
+            Log.d(TAG, info.toString());
+
+            String url = "http://cogel.jp:4001/api/todos";
+            url += "/" + todo.getId();
+            mQueue = Volley.newRequestQueue(getActivity());
+            mQueue.add(new JsonObjectRequest(
+                    Request.Method.DELETE,
+                    url,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            MainActivity activity = (MainActivity)getActivity();
+                            activity.loadTasks();
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.d(TAG, error.toString());
+                        }
+                    }
+
+            ));
             return true;
         }
         return super.onContextItemSelected(item);
@@ -120,7 +162,7 @@ public class TodoListFragment extends Fragment implements AdapterView.OnItemClic
             int color = intent.getIntExtra(TodoFormFragment.ARGS_COLORLABEL, Todo.ColorLabel.NONE);
             String value = intent.getStringExtra(TodoFormFragment.ARGS_VALUE);
             long createdTime = intent.getLongExtra(TodoFormFragment.ARGS_CREATEDTIME, 0);
-            Todo newItem = new Todo(color, value, createdTime);
+            Todo newItem = new Todo(0L, color, value, createdTime);
 
             //作成時間を既に存在するデータか確認
             int updateIndex = -1;
@@ -141,7 +183,6 @@ public class TodoListFragment extends Fragment implements AdapterView.OnItemClic
 
             //TODOリストを更新
             mAdapter.notifyDataSetChanged();
-
         }
     };
 }

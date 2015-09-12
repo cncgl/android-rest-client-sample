@@ -22,7 +22,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
-    private List<Todo> mTodoList;
+    private List<Todo> mTodoList = new ArrayList<>();
 
     private RequestQueue mQueue;
 
@@ -49,44 +49,45 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void loadTasks() {
+    public void loadTasks() {
         Log.d(TAG, "loadTasks");
 
         // 接続先
         String url = "http://cogel.jp:4001/api/todos";
 
         // キューにリクエストを追加
+        mTodoList.clear();
         mQueue.add(new JsonObjectRequest(
-                Request.Method.GET,
-                url,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            JSONArray todos = response.getJSONArray("todos");
-                            mTodoList = new ArrayList<Todo>();
+            Request.Method.GET,
+            url,
+            new Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(JSONObject response) {
+                    try {
+                        JSONArray todos = response.getJSONArray("todos");
+                        //mTodoList = new ArrayList<Todo>();
 
-                            for (int i = 0; i < todos.length(); i++) {
-                                JSONObject todo = todos.getJSONObject(i);
-                                mTodoList.add(new Todo(
-                                        todo.getBoolean("status") ? Todo.ColorLabel.PINK : Todo.ColorLabel.GREEN,
-                                        todo.getString("title"),
-                                        0L
-                                ));
-                            }
-                            showTodoList();
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
+                        for (int i = 0; i < todos.length(); i++) {
+                            JSONObject todo = todos.getJSONObject(i);
+                            mTodoList.add(new Todo(
+                                    todo.getLong("id"),
+                                    todo.getBoolean("status") ? Todo.ColorLabel.PINK : Todo.ColorLabel.GREEN,
+                                    todo.getString("title"),
+                                    0L
+                            ));
                         }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.d(TAG, error.toString());
+                        showTodoList();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
                 }
+            },
+            new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Log.d(TAG, error.toString());
+                }
+            }
         ));
     }
 
@@ -114,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
      * TODOリスト一覧を表示
      */
     public void showTodoList() {
+        Log.d(TAG, "showTodoList");
         String tag = TodoListFragment.TAG;
         getSupportFragmentManager().beginTransaction().replace(R.id.container,
                 TodoListFragment.newInstance(), tag).commit();
@@ -145,11 +147,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public List<Todo> getTodoList() {
-        return mTodoList == null ? new ArrayList<Todo>() : mTodoList;
+        //return mTodoList == null ? new ArrayList<Todo>() : mTodoList;
+        return mTodoList;
     }
     /**
      * タブレットか判定.
-     * @return
+     * @return タブレトットのとき真
      */
     public boolean isTablet() {
         return mIsTablet;

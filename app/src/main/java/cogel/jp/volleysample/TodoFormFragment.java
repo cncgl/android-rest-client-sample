@@ -68,6 +68,7 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
         return new TodoFormFragment();
     }
 
+    // Fragment のコンストラクタには引数を渡せない制限があるので、static メソッドで生成
     public static TodoFormFragment newInstance(int colorLabel, String value, long createdTime) {
         TodoFormFragment fragment = new TodoFormFragment();
         Bundle args = new Bundle();
@@ -214,6 +215,8 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
                 if (!isTablet) {
                     //スマートフォンレイアウトの場合はリスト画面に戻る
                     getFragmentManager().popBackStack();
+                    MainActivity activity = (MainActivity)getActivity();
+                    activity.loadTasks();
                 } else {
                     //タブレットレイアウトで新規TODOを作成した場合はテキストをクリア
                     if (getArguments() == null) {

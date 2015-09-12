@@ -10,11 +10,9 @@ import java.util.List;
  * Created by m_iwasaki on 15/03/12.
  */
 public class Todo {
-
+    private long id;
     private int colorLabel;
-
     private long createdTime;
-
     private String value;
 
     public static interface ColorLabel {
@@ -27,7 +25,8 @@ public class Todo {
 
     // Constructor
     //--------------------------------------------------------
-    public Todo(int colorLabel, String value, long createdTime) {
+    public Todo(long id, int colorLabel, String value, long createdTime) {
+        this.id = id;
         this.colorLabel = colorLabel;
         this.value = value;
         this.createdTime = createdTime;
@@ -35,6 +34,13 @@ public class Todo {
 
     // Accessor
     //--------------------------------------------------
+    public long getId() {
+        return id;
+    }
+    public void setId(long id) {
+        this.id = id;
+    }
+
     public int getColorLabel() {
         return colorLabel;
     }
@@ -64,12 +70,12 @@ public class Todo {
      */
     public static List<Todo> addDummyItem() {
         List<Todo> items = new ArrayList<>();
-        items.add(new Todo(Todo.ColorLabel.INDIGO, "猫に小判", System.currentTimeMillis() + 1));
-        items.add(new Todo(Todo.ColorLabel.PINK, "猫の手も借りたい", System.currentTimeMillis() + 2));
-        items.add(new Todo(Todo.ColorLabel.GREEN, "窮鼠猫を噛む", System.currentTimeMillis() + 3));
-        items.add(new Todo(Todo.ColorLabel.AMBER,
+        items.add(new Todo(1L, Todo.ColorLabel.INDIGO, "猫に小判", System.currentTimeMillis() + 1));
+        items.add(new Todo(2L, Todo.ColorLabel.PINK, "猫の手も借りたい", System.currentTimeMillis() + 2));
+        items.add(new Todo(3L, Todo.ColorLabel.GREEN, "窮鼠猫を噛む", System.currentTimeMillis() + 3));
+        items.add(new Todo(4L, Todo.ColorLabel.AMBER,
                 "猫は三年飼っても三日で恩を忘れる", System.currentTimeMillis() + 4));
-        items.add(new Todo(Todo.ColorLabel.NONE, "猫も杓子も", System.currentTimeMillis() + 5));
+        items.add(new Todo(5L, Todo.ColorLabel.NONE, "猫も杓子も", System.currentTimeMillis() + 5));
         return items;
     }
 }

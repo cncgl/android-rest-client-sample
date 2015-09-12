@@ -102,6 +102,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * アプリが終了した時の処理
+     */
+    @Override
+    public void onStop() {
+        super.onStop();
+        mQueue.cancelAll(this);
+    }
+
+    /**
      * TODOリスト一覧を表示
      */
     public void showTodoList() {
@@ -136,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public List<Todo> getTodoList() {
-        return mTodoList;
+        return mTodoList == null ? new ArrayList<Todo>() : mTodoList;
     }
     /**
      * タブレットか判定.

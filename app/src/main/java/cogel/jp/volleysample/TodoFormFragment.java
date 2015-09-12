@@ -1,5 +1,6 @@
 package cogel.jp.volleysample;
 
+import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -10,6 +11,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -18,6 +20,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONObject;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -42,8 +58,12 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
 
     private boolean mIsTextEdited = false;
 
+    private RequestQueue mQueue;
+
     private MenuItem mMenuAdd;
 
+    // シングルトンファクトリー
+    //------------------------------
     public static TodoFormFragment newInstance() {
         return new TodoFormFragment();
     }
@@ -73,10 +93,10 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
         View rootView = inflater.inflate(R.layout.fragment_todo, container, false);
 
         //カラーラベルのインスタンスを取得
-        rootView.findViewById(R.id.color_none).setOnClickListener(this);
-        rootView.findViewById(R.id.color_amber).setOnClickListener(this);
+        //rootView.findViewById(R.id.color_none).setOnClickListener(this);
+        //rootView.findViewById(R.id.color_amber).setOnClickListener(this);
         rootView.findViewById(R.id.color_green).setOnClickListener(this);
-        rootView.findViewById(R.id.color_indigo).setOnClickListener(this);
+        //rootView.findViewById(R.id.color_indigo).setOnClickListener(this);
         rootView.findViewById(R.id.color_pink).setOnClickListener(this);
 
         //入力フォームのインスタンスを取得
@@ -116,7 +136,11 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
 
     }
 
-
+    /**
+     * メニューを設定する
+     * @param menu
+     * @param inflater
+     */
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         MenuItem menuItem = menu.findItem(MENU_ADD);
@@ -129,13 +153,19 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
         super.onCreateOptionsMenu(menu, inflater);
     }
 
-
+    /**
+     * メニューが選択された時に処理をする
+     * @param item
+     * @return 正常に処理がされた時真
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == MENU_ADD) {
             //TODOリストを追加
-            String value = mEtInput.getText().toString();
+            final String value = mEtInput.getText().toString();
             if (!TextUtils.isEmpty(value) && mIsTextEdited) {
+                /*
+                 * Ｉｎｔｅｎｔ で渡す必要はないので追加の　ＡＰＩ　を呼び出す。
                 Intent resultData = new Intent();
                 resultData.putExtra(ARGS_COLORLABEL, mColorLabel);
                 resultData.putExtra(ARGS_VALUE, value);
@@ -150,6 +180,35 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
                 //Broadcastを送信
                 resultData.setAction(TodoListFragment.ACTION_CREATE_TODO);
                 LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(resultData);
+                */
+                String url = "http://cogel.jp:4001/api/todos";
+                mQueue = Volley.newRequestQueue(getActivity());
+                StringRequest sr = new StringRequest(
+                        Request.Method.POST,
+                        url,
+                        new Response.Listener<String>() {
+                            @Override
+                            public void onResponse(String response) {
+                                Log.d(TAG, response);
+                            }
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                Log.d(TAG, error.toString());
+                            }
+                        }
+                ) {
+                    @Override
+                    protected Map<String, String> getParams() {
+                        Map<String, String>params = new HashMap<String, String>();
+                        params.put("todo[status]", "true");
+                        params.put("todo[title]", value);
+                        return params;
+                    }
+                };
+                mQueue.add(sr);
+
 
                 boolean isTablet = ((MainActivity) getActivity()).isTablet();
                 if (!isTablet) {
@@ -173,10 +232,14 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
         return super.onOptionsItemSelected(item);
     }
 
-
+    /**
+     * View でクリックされた時の処理
+     * @param v
+     */
     @Override
     public void onClick(View v) {
         int viewId = v.getId();
+        /*
         if (viewId == R.id.color_none) {
             mColorLabel = Todo.ColorLabel.NONE;
         } else if (viewId == R.id.color_amber) {
@@ -187,6 +250,12 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
             mColorLabel = Todo.ColorLabel.INDIGO;
         } else if (viewId == R.id.color_green) {
             mColorLabel = Todo.ColorLabel.GREEN;
+        }
+        */
+        if (viewId == R.id.color_green) {
+            mColorLabel = Todo.ColorLabel.GREEN;
+        } else {
+            mColorLabel = Todo.ColorLabel.PINK;
         }
         mEtInput.setTextColor(getColorResource(mColorLabel));
     }

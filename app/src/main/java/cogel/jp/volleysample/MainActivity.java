@@ -2,6 +2,7 @@ package cogel.jp.volleysample;
 
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.FrameLayout;
@@ -27,19 +28,20 @@ public class MainActivity extends AppCompatActivity {
     private RequestQueue mQueue;
 
     private boolean mIsTablet = false;
+    Handler mHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "Activity-onCreate");
+
         setContentView(R.layout.activity_main);
+        mHandler = new Handler();
 
         //ダミーデータ作成
         //mTodoList = Todo.addDummyItem();
         mQueue = Volley.newRequestQueue(this);
         loadTasks();
-
-        //TODOリスト一覧を表示
-        //showTodoList();
 
         //タブレットレイアウトなら右側にフォーム画面を表示
         FrameLayout container2 = (FrameLayout) findViewById(R.id.container2);
@@ -93,9 +95,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        Log.d(TAG, "Activity-onBackPressed");
         if (getSupportFragmentManager().getBackStackEntryCount() > 1) {
             //フォーム画面を開いている場合は画面を閉じる
             getSupportFragmentManager().popBackStack();
+            // 再取得する
+            //loadTasks();
         } else {
             //リスト画面の場合は通常のバックキー処理(アプリを終了)
             super.onBackPressed();
@@ -103,11 +108,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * アプリ開始時の処理
+     */
+    @Override
+    public void onStart() {
+        super.onStart();
+        Log.d(TAG, "Activity-onStart");
+    }
+    /**
+     * アプリ再表示時の処理
+     */
+    @Override
+    public void onRestart() {
+        super.onRestart();
+        Log.d(TAG, "Activity-onRestart");
+        loadTasks();
+    }
+    /**
      * アプリが終了した時の処理
      */
     @Override
     public void onStop() {
         super.onStop();
+        Log.d(TAG, "Activity-onStop");
         mQueue.cancelAll(this);
     }
 
@@ -130,9 +153,11 @@ public class MainActivity extends AppCompatActivity {
         String tag = TodoFormFragment.TAG;
         TodoFormFragment fragment;
         if (item == null) {
+            // 新規作成
             fragment = TodoFormFragment.newInstance();
         } else {
-            fragment = TodoFormFragment.newInstance(item.getColorLabel(),
+            // 編集
+            fragment = TodoFormFragment.newInstance(item.getId(), item.getColorLabel(),
                     item.getValue(), item.getCreatedTime());
         }
         if (!mIsTablet) {

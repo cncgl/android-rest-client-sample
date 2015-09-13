@@ -19,6 +19,8 @@ public class TodoListAdapter extends ArrayAdapter<Todo> {
     /** フィールド */
     private LayoutInflater mInflator;
 
+    // コンストラクタ
+    //-------------------------------------------
     public TodoListAdapter(Context context, List<Todo> objects) {
         super(context, 0, objects);
         mInflator = (LayoutInflater) context

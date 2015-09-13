@@ -94,6 +94,8 @@ public class TodoListFragment extends Fragment implements AdapterView.OnItemClic
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        Log.d(TAG, "onItemClick:" + position);
+
         //クリックしたアイテムを表示
         ((MainActivity) getActivity()).showTodoForm(mAdapter.getItem(position));
     }

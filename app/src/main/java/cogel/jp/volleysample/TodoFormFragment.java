@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
@@ -43,6 +44,9 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
     public static final String TAG = TodoFormFragment.class.getSimpleName();
 
     private static final int MENU_ADD = 1;
+    private static final int MENU_SET = 2;
+
+    public static final String ARGS_ID = "key-id";
 
     public static final String ARGS_COLORLABEL = "key-colorlabel";
 
@@ -61,6 +65,7 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
     private RequestQueue mQueue;
 
     private MenuItem mMenuAdd;
+    private MenuItem mMenuSet;
 
     // シングルトンファクトリー
     //------------------------------
@@ -69,9 +74,10 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
     }
 
     // Fragment のコンストラクタには引数を渡せない制限があるので、static メソッドで生成
-    public static TodoFormFragment newInstance(int colorLabel, String value, long createdTime) {
+    public static TodoFormFragment newInstance(long id, int colorLabel, String value, long createdTime) {
         TodoFormFragment fragment = new TodoFormFragment();
         Bundle args = new Bundle();
+        args.putLong(ARGS_ID, id);
         args.putInt(ARGS_COLORLABEL, colorLabel);
         args.putString(ARGS_VALUE, value);
         args.putLong(ARGS_CREATEDTIME, createdTime);
@@ -79,6 +85,8 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
         return fragment;
     }
 
+    // オーバーライド
+    //-----------------------------
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -132,9 +140,7 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
             //作成時間をセット
             mCreatedTime = args.getLong(ARGS_CREATEDTIME, 0);
         }
-
         return rootView;
-
     }
 
     /**
@@ -146,9 +152,19 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         MenuItem menuItem = menu.findItem(MENU_ADD);
         if (menuItem == null) {
-            mMenuAdd = menu.add(Menu.NONE, MENU_ADD, Menu.NONE, "ADD");
+            mMenuAdd = menu.add(Menu.NONE, MENU_ADD, Menu.NONE, getString(R.string.add));
+            mMenuSet = menu.add(Menu.NONE, MENU_SET, Menu.NONE, getString(R.string.set));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                 mMenuAdd.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                mMenuSet.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+            }
+            Bundle b = getArguments();
+            if( b == null ) {
+                mMenuAdd.setVisible(true);
+                mMenuSet.setVisible(false);
+            } else {
+                mMenuAdd.setVisible(false);
+                mMenuSet.setVisible(true);
             }
         }
         super.onCreateOptionsMenu(menu, inflater);
@@ -161,7 +177,7 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
      */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == MENU_ADD) {
+        if (item.getItemId() == MENU_ADD || item.getItemId() == MENU_SET) {
             //TODOリストを追加
             final String value = mEtInput.getText().toString();
             if (!TextUtils.isEmpty(value) && mIsTextEdited) {
@@ -183,14 +199,20 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
                 LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(resultData);
                 */
                 String url = "http://cogel.jp:4001/api/todos";
+                if( item.getItemId() == MENU_SET ) {
+                    url += "/" + getArguments().getLong(ARGS_ID);
+                }
                 mQueue = Volley.newRequestQueue(getActivity());
+                int method = item.getItemId() == MENU_ADD ? Request.Method.POST : Request.Method.PUT;
                 StringRequest sr = new StringRequest(
-                        Request.Method.POST,
+                        method,
                         url,
                         new Response.Listener<String>() {
                             @Override
                             public void onResponse(String response) {
                                 Log.d(TAG, response);
+                                //MainActivity activity = (MainActivity)getActivity();
+                                //activity.loadTasks();
                             }
                         },
                         new Response.ErrorListener() {
@@ -210,13 +232,16 @@ public class TodoFormFragment extends Fragment implements View.OnClickListener {
                 };
                 mQueue.add(sr);
 
-
                 boolean isTablet = ((MainActivity) getActivity()).isTablet();
                 if (!isTablet) {
                     //スマートフォンレイアウトの場合はリスト画面に戻る
                     getFragmentManager().popBackStack();
-                    MainActivity activity = (MainActivity)getActivity();
-                    activity.loadTasks();
+                    final MainActivity activity = (MainActivity)getActivity();
+                    activity.mHandler.post(new Runnable() {
+                        public void run() {
+                            activity.loadTasks();
+                        }
+                    });
                 } else {
                     //タブレットレイアウトで新規TODOを作成した場合はテキストをクリア
                     if (getArguments() == null) {
